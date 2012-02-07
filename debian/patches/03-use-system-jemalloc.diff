@@ -1,0 +1,37 @@
+Description: Use system jemalloc
+ Upstream seem to be "difficult" on this matter. See:
+ https://github.com/antirez/redis/pull/137
+Author: Chris Lamb <lamby@debian.org>
+
+--- redis-2.4.2.orig/src/Makefile
++++ redis-2.4.2/src/Makefile
+@@ -47,9 +47,9 @@ ifeq ($(USE_TCMALLOC_MINIMAL),yes)
+ endif
+ 
+ ifeq ($(USE_JEMALLOC),yes)
+-  ALLOC_DEP=../deps/jemalloc/lib/libjemalloc.a
+-  ALLOC_LINK=$(ALLOC_DEP) -ldl
+-  ALLOC_FLAGS=-DUSE_JEMALLOC -I../deps/jemalloc/include
++  ALLOC_DEP=/usr/lib/libjemalloc.a
++  ALLOC_LINK=-ljemalloc
++  ALLOC_FLAGS=-DUSE_JEMALLOC -I/usr/include/jemalloc
+ endif
+ 
+ CCOPT= $(CFLAGS) $(ARCH) $(PROF)
+--- redis-2.4.2.orig/src/zmalloc.c
++++ redis-2.4.2/src/zmalloc.c
+@@ -52,10 +52,10 @@
+ #define realloc(ptr,size) tc_realloc(ptr,size)
+ #define free(ptr) tc_free(ptr)
+ #elif defined(USE_JEMALLOC)
+-#define malloc(size) je_malloc(size)
+-#define calloc(count,size) je_calloc(count,size)
+-#define realloc(ptr,size) je_realloc(ptr,size)
+-#define free(ptr) je_free(ptr)
++#define malloc(size) malloc(size)
++#define calloc(count,size) calloc(count,size)
++#define realloc(ptr,size) realloc(ptr,size)
++#define free(ptr) free(ptr)
+ #endif
+ 
+ #define update_zmalloc_stat_alloc(__n,__size) do { \

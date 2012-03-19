@@ -1,3 +1,10 @@
+redis (2:2.4.9-1~dotdeb.0) stable; urgency=low
+
+  * /etc/init.d/redis-server now sets "ulimit -n" accordling to the maxclients
+    value in /etc/redis/redis.conf (if >992)
+
+ -- Guillaume Plessis <gui@dotdeb.org>  Mon, 19 Mar 2012 14:04:42 +0100
+
 redis (2:2.4.8-1~dotdeb.0) stable; urgency=low
 
   * New upstream release

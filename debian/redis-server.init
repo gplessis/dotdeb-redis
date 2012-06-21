@@ -23,12 +23,12 @@ PIDFILE=$RUNDIR/redis-server.pid
 
 test -x $DAEMON || exit 0
 
-set -e
-
-maxclients=$(awk '/^[ \t]*maxclients[ \t]/ { print $2 }' /etc/redis/redis.conf)
-if [ ! -z $maxclients ]  && [ $maxclients -gt 992 ] ; then
-  ulimit -n $((maxclients+32))
+if [ -r /etc/default/$NAME ]
+then
+	. /etc/default/$NAME
 fi
+
+set -e
 
 case "$1" in
   start)
@@ -37,6 +37,12 @@ case "$1" in
 	touch $PIDFILE
 	chown redis:redis $RUNDIR $PIDFILE
 	chmod 755 $RUNDIR
+
+	if [ -n "$ULIMIT" ]
+	then
+		ulimit -n $ULIMIT
+	fi
+
 	if start-stop-daemon --start --quiet --umask 007 --pidfile $PIDFILE --chuid redis:redis --exec $DAEMON -- $DAEMON_ARGS
 	then
 		echo "$NAME."

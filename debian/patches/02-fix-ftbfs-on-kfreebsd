@@ -3,11 +3,11 @@
 # Bug-Debian: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=632499
 # Author: Christoph Egger <christoph@debian.org>
 
-Index: redis-2.6.3/src/fmacros.h
+Index: redis-2.6.5/src/fmacros.h
 ===================================================================
---- redis-2.6.3.orig/src/fmacros.h
-+++ redis-2.6.3/src/fmacros.h
-@@ -7,7 +7,7 @@
+--- redis-2.6.5.orig/src/fmacros.h
++++ redis-2.6.5/src/fmacros.h
+@@ -36,7 +36,7 @@
  #define _GNU_SOURCE
  #endif
  

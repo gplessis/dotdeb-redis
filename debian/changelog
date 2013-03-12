@@ -1,14 +1,20 @@
+redis (2:2.6.11-1~dotdeb.0) stable; urgency=low
+
+  * New upstream release.
+
+ -- Guillaume Plessis <gui@dotdeb.org>  Tue, 12 Mar 2013 17:16:42 +0100
+
 redis (2:2.6.10-1~dotdeb.0) stable; urgency=low
 
   * New upstream release.
 
- -- Guillaume Plessis <gui@dotdeb.org>  Mon, 11 Feb 2012 13:50:42 +0100
+ -- Guillaume Plessis <gui@dotdeb.org>  Mon, 11 Feb 2013 13:50:42 +0100
 
 redis (2:2.6.8-1~dotdeb.0) stable; urgency=low
 
   * New upstream release.
 
- -- Guillaume Plessis <gui@dotdeb.org>  Thu, 10 Jan 2012 22:46:42 +0100
+ -- Guillaume Plessis <gui@dotdeb.org>  Thu, 10 Jan 2013 22:46:42 +0100
 
 redis (2:2.6.7-1~dotdeb.0) stable; urgency=low
 

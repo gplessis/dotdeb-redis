@@ -1,3 +1,9 @@
+redis (2:2.6.12-1~dotdeb.1) testing; urgency=low
+
+  * Rebuilt for Wheezy
+
+ -- Guillaume Plessis <gui@dotdeb.org>  Sun, 28 Apr 2013 20:19:42 -0700
+
 redis (2:2.6.12-1~dotdeb.0) stable; urgency=low
 
   * New upstream release.

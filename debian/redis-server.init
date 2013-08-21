@@ -28,6 +28,8 @@ then
 	. /etc/default/$NAME
 fi
 
+. /lib/lsb/init-functions
+
 set -e
 
 case "$1" in

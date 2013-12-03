@@ -1,92 +1,97 @@
-redis (2:2.6.16-1~dotdeb.1) stable; urgency=low
+redis (2:2.8.2-1~dotdeb.1) stable; urgency=low
 
-  * New upstream release
+  * New upstream release.
+  * Sync with Debian
 
- -- Guillaume Plessis <gui@dotdeb.org>  Wed, 28 Aug 2013 12:16:42 -0700
+ -- Guillaume Plessis <gui@dotdeb.org>  Mon, 02 Dec 2013 19:42:42 -0700
 
-redis (2:2.6.15-1~dotdeb.1) stable; urgency=low
+redis (2:2.8.0-1) unstable; urgency=low
 
-  * New upstream release
+  * New upstream release.
+    - Update debian/patches/02-fix-ftbfs-on-kfreebsd.
+    - Update debian/patches/03-use-system-jemalloc.diff.
+    - Update debian/redis.conf
+  * Bump Standards-Version to 3.9.4.
 
- -- Guillaume Plessis <gui@dotdeb.org>  Wed, 21 Aug 2013 11:06:42 -0700
+ -- Chris Lamb <lamby@debian.org>  Fri, 22 Nov 2013 16:51:55 +0000
 
-redis (2:2.6.14-1~dotdeb.1) testing; urgency=low
+redis (2:2.6.16-3) unstable; urgency=low
 
-  * New upstream release
+  * Add missing Replaces and Breaks to redis-tools. Thanks to Andreas Beckmann
+    (anbe). (Closes: #723703)
 
- -- Guillaume Plessis <gui@dotdeb.org>  Thu, 20 Jun 2013 09:30:42 -0700
+ -- Chris Lamb <lamby@debian.org>  Fri, 20 Sep 2013 14:35:24 +0100
 
-redis (2:2.6.13-1~dotdeb.1) testing; urgency=low
+redis (2:2.6.16-2) unstable; urgency=low
 
-  * New upstream release
+  * Completely rework and refresh debian/copyright. (Closes: #723162)
+  * Update website in debian/copyright.
+  * Drop client library references from debian/copyright (dropped in
+    2:1.1.90~beta-1).
+  * Update main copyright year.
 
- -- Guillaume Plessis <gui@dotdeb.org>  Tue, 30 Apr 2013 14:17:42 -0700
+ -- Chris Lamb <lamby@debian.org>  Tue, 17 Sep 2013 19:08:01 +0100
 
-redis (2:2.6.12-1~dotdeb.1) testing; urgency=low
+redis (2:2.6.16-1) unstable; urgency=low
 
-  * Rebuilt for Wheezy
+  * New upstream release.
+  * Split non-server binaries into redis-tools package. (Closes: #723006)
+  * Update debian/watch.
 
- -- Guillaume Plessis <gui@dotdeb.org>  Sun, 28 Apr 2013 20:19:42 -0700
+ -- Chris Lamb <lamby@debian.org>  Mon, 16 Sep 2013 09:53:49 +0100
 
-redis (2:2.6.12-1~dotdeb.0) stable; urgency=low
+redis (2:2.6.14-2) unstable; urgency=low
+
+  * Source /lib/lsb/init-functions in initscript for systemd compatibility.
+
+ -- Chris Lamb <lamby@debian.org>  Mon, 12 Aug 2013 16:17:47 +0100
+
+redis (2:2.6.14-1) unstable; urgency=low
 
   * New upstream release.
 
- -- Guillaume Plessis <gui@dotdeb.org>  Sun, 31 Mar 2013 10:52:42 -0800
+ -- Chris Lamb <lamby@debian.org>  Tue, 06 Aug 2013 12:14:12 +0100
 
-redis (2:2.6.11-1~dotdeb.0) stable; urgency=low
+redis (2:2.6.13-1) unstable; urgency=low
+
+  * New upstream release.
+    - Sync debian/redis.conf.
+    - Update 02-fix-ftbfs-on-kfreebsd.diff.
+
+ -- Chris Lamb <lamby@debian.org>  Mon, 17 Jun 2013 00:49:42 +0100
+
+redis (2:2.6.7-1) unstable; urgency=low
+
+  * New upstream release.
+  * Add missing "status" command from usage. Thanks to Dererk
+    <dererk@debian.org>. (Closes: #696339)
+  * Enable building on kfreebsd-amd64 (and possibly kfreebsd-i386 and
+    hurd-i386) by not depending on 'jemalloc' which would not be used anyway.
+    Thanks to Jeff Epler <jepler@unpythonic.net>. (Closes: #696618)
+
+ -- Chris Lamb <lamby@debian.org>  Fri, 28 Dec 2012 17:00:06 +0000
+
+redis (2:2.6.0-1) unstable; urgency=low
+
+  * New upstream release.
+  * Update 02-fix-ftbfs-on-kfreebsd.diff.
+  * Update 03-use-system-jemalloc.diff.
+  * Update configuration file.
+
+ -- Chris Lamb <lamby@debian.org>  Tue, 23 Oct 2012 15:04:17 +0100
+
+redis (2:2.4.17-1) unstable; urgency=low
+
+  * New upstream release.
+  * Bump Standards-Version to 3.9.3.
+
+ -- Chris Lamb <lamby@debian.org>  Wed, 10 Oct 2012 21:16:47 +0100
+
+redis (2:2.4.15-1) unstable; urgency=low
 
   * New upstream release.
 
- -- Guillaume Plessis <gui@dotdeb.org>  Tue, 12 Mar 2013 17:16:42 +0100
-
-redis (2:2.6.10-1~dotdeb.0) stable; urgency=low
-
-  * New upstream release.
-
- -- Guillaume Plessis <gui@dotdeb.org>  Mon, 11 Feb 2013 13:50:42 +0100
-
-redis (2:2.6.8-1~dotdeb.0) stable; urgency=low
-
-  * New upstream release.
-
- -- Guillaume Plessis <gui@dotdeb.org>  Thu, 10 Jan 2013 22:46:42 +0100
-
-redis (2:2.6.7-1~dotdeb.0) stable; urgency=low
-
-  * New upstream release.
-
- -- Guillaume Plessis <gui@dotdeb.org>  Tue, 04 Dec 2012 10:32:42 +0100
-
-redis (2:2.6.5-1~dotdeb.0) stable; urgency=low
-
-  * New upstream release.
-
- -- Guillaume Plessis <gui@dotdeb.org>  Fri, 23 Nov 2012 13:22:42 -0800
-
-redis (2:2.6.3-1~dotdeb.0) stable; urgency=low
-
-  * New upstream release.
-
- -- Guillaume Plessis <gui@dotdeb.org>  Wed, 07 Nov 2012 10:01:42 +0100
-
-redis (2:2.6.0-1~dotdeb.0) stable; urgency=low
-
-  * New upstream release.
-
- -- Guillaume Plessis <gui@dotdeb.org>  Tue, 23 Oct 2012 12:17:42 +0200
-
-redis (2:2.4.16-1~dotdeb.0) stable; urgency=low
-
-  * New upstream release.
-
- -- Guillaume Plessis <gui@dotdeb.org>  Thu, 02 Aug 2012 11:33:42 +0200
-
-redis (2:2.4.15-1~dotdeb.0) stable; urgency=low
-
-  * New upstream release.
-
- -- Guillaume Plessis <gui@dotdeb.org>  Thu, 21 Jun 2012 10:31:42 -0700
+ -- Chris Lamb <lamby@debian.org>  Mon, 02 Jul 2012 10:56:28 +0100
 
 redis (2:2.4.14-1) unstable; urgency=low
 

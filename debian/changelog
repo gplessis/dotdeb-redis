@@ -1,3 +1,9 @@
+redis (2:2.8.3-1~dotdeb.0) oldstable; urgency=low
+
+  * New upstream release.
+
+ -- Guillaume Plessis <gui@dotdeb.org>  Fri, 13 Dec 2013 12:31:42 -0700
+
 redis (2:2.8.2-1~dotdeb.0) oldstable; urgency=low
 
   * New upstream release.

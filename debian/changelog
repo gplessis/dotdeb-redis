@@ -1,15 +1,29 @@
-redis (2:2.8.3-1~dotdeb.1) stable; urgency=low
+redis (2:2.8.4-2~dotdeb.1) stable; urgency=low
 
-  * New upstream release.
+  * Rebuilt for Dotdeb
 
- -- Guillaume Plessis <gui@dotdeb.org>  Fri, 13 Dec 2013 12:31:42 -0700
+ -- Guillaume Plessis <gui@dotdeb.org>  Tue, 14 Jan 2014 14:31:42 -0700
 
-redis (2:2.8.2-1~dotdeb.1) stable; urgency=low
+redis (2:2.8.4-2) unstable; urgency=low
 
-  * New upstream release.
-  * Sync with Debian
+  * Symlink redis-sentinel to redis-server as it's the same binary.
+  * Install sentinel.conf.
 
- -- Guillaume Plessis <gui@dotdeb.org>  Mon, 02 Dec 2013 19:42:42 -0700
+ -- Chris Lamb <lamby@debian.org>  Tue, 14 Jan 2014 12:31:14 +0000
+
+redis (2:2.8.4-1) unstable; urgency=low
+
+  * New upstream version.
+  * Sync debian/redis.conf.
+  * Also ship redis-sentinel (Closes: #735272)
+
+ -- Chris Lamb <lamby@debian.org>  Tue, 14 Jan 2014 10:42:09 +0000
+
+redis (2:2.8.2-1) unstable; urgency=low
+
+  * New upstream version.
+
+ -- Chris Lamb <lamby@debian.org>  Fri, 06 Dec 2013 14:37:54 +0000
 
 redis (2:2.8.0-1) unstable; urgency=low
 

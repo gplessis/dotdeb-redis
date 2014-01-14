@@ -1,2 +1,3 @@
 src/redis-server		/usr/bin
 debian/redis.conf	/etc/redis
+sentinel.conf	/etc/redis

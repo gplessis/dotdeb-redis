@@ -1,11 +1,35 @@
 #!/bin/sh
 
-set -eu
+set -eux
 
 USER="redis"
 GROUP="$USER"
 
-chown $USER:$GROUP /var/lib/redis
-chown $USER:$GROUP /var/log/redis
+case "${1}" in
+	configure)
+		adduser \
+			--home /var/lib/redis \
+			--quiet \
+			--system \
+			--group \
+			${USER}
+
+		for DIR in /var/lib/redis /var/log/redis
+		do
+			mkdir -p ${DIR}
+			chown ${USER}:${GROUP} ${DIR}
+		done
+		;;
+
+	abort-upgrade|abort-remove|abort-deconfigure)
+		;;
+
+	*)
+		echo "postinst called with unknown argument \`${1}'" >&2
+		exit 1
+		;;
+esac
 
 #DEBHELPER#
+
+exit 0

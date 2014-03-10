@@ -2,10 +2,10 @@
 
 set -e
 
-if [ "$1" = "purge" ]
+if [ "${1}" = "purge" ]
 then
-	rm -rf /var/lib/redis
-	userdel redis
+	userdel redis || true
+	rm -rf /var/lib/redis /var/log/redis
 fi
 
 #DEBHELPER#

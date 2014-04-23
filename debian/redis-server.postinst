@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -eux
+set -eu
 
 USER="redis"
 GROUP="$USER"

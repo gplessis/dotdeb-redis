@@ -7,7 +7,7 @@ export FORCE_LIBC_MALLOC = yes
 endif
 
 %:
-	dh $@
+	dh $@ --with systemd
 
 override_dh_auto_test:
 	# Testsuite requires working TCP/IP and a non-interactive mode

@@ -1,3 +1,4 @@
 src/redis-server		/usr/bin
 debian/redis.conf	/etc/redis
 sentinel.conf	/etc/redis
+debian/redis-server.service /lib/systemd/system

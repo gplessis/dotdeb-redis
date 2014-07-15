@@ -1,1 +1,2 @@
-02-fix-ftbfs-on-kfreebsd
+01-fix-ftbfs-on-kfreebsd.diff -p1
+02-fix-ftbfs-on-kfreebsd -p1

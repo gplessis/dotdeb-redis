@@ -1,56 +1,74 @@
-redis (2:2.8.12-1~dotdeb.0) oldstable; urgency=low
-
-  * New upstream release
-
- -- Guillaume Plessis <gui@dotdeb.org>  Mon, 23 Jun 2014 07:50:42 -0700
-
-redis (2:2.8.11-1~dotdeb.0) oldstable; urgency=low
-
-  * New upstream release
-
- -- Guillaume Plessis <gui@dotdeb.org>  Sat, 14 Jun 2014 14:50:42 -0700
-
-redis (2:2.8.10-1~dotdeb.0) oldstable; urgency=low
-
-  * New upstream release
-
- -- Guillaume Plessis <gui@dotdeb.org>  Sat, 07 Jun 2014 18:03:42 -0700
-
-redis (2:2.8.9-1~dotdeb.0) oldstable; urgency=low
-
-  * New upstream release
-
- -- Guillaume Plessis <gui@dotdeb.org>  Wed, 23 Apr 2014 13:00:42 -0700
-
-redis (2:2.8.8-1~dotdeb.0) oldstable; urgency=low
-
-  * New upstream release
-
- -- Guillaume Plessis <gui@dotdeb.org>  Tue, 25 Mar 2014 08:11:42 -0700
-
-redis (2:2.8.7-1~dotdeb.0) oldstable; urgency=low
-
-  * New upstream release
-
- -- Guillaume Plessis <gui@dotdeb.org>  Wed, 05 Mar 2014 17:08:42 +0100
-
-redis (2:2.8.6-1~dotdeb.0) oldstable; urgency=low
-
-  * New upstream release
-
- -- Guillaume Plessis <gui@dotdeb.org>  Wed, 18 Feb 2014 08:47:42 -0700
-
-redis (2:2.8.5-1~dotdeb.0) oldstable; urgency=low
-
-  * New upstream release
-
- -- Guillaume Plessis <gui@dotdeb.org>  Fri, 07 Feb 2014 15:09:42 -0700
-
-redis (2:2.8.4-2~dotdeb.0) oldstable; urgency=low
+redis (2:2.8.13-1~dotdeb.0) oldstable; urgency=low
 
   * Rebuilt for Dotdeb
+  * Sync with Debian
 
- -- Guillaume Plessis <gui@dotdeb.org>  Tue, 14 Jan 2014 14:31:42 -0700
+ -- Guillaume Plessis <gui@dotdeb.org>  Mon, 14 Jul 2014 20:09:42 -0700
+
+redis (2:2.8.13-1) unstable; urgency=low
+
+  * New upstream release.
+  * Synchronise ./debian/redis.conf with ./redis.conf.
+  * Update 03-use-system-jemalloc.diff.
+  * Fix FTBFS under kfreebsd (Closes: #754634)
+
+ -- Chris Lamb <lamby@debian.org>  Mon, 14 Jul 2014 22:49:15 +0100
+
+redis (2:2.8.12-1) unstable; urgency=low
+
+  * New upstream release.
+    - Synchronise ./debian/redis.conf with ./redis.conf.
+
+ -- Chris Lamb <lamby@debian.org>  Sat, 05 Jul 2014 17:15:01 +0100
+
+redis (2:2.8.11-1) unstable; urgency=low
+
+  * New upstream release.
+    - Synchronise ./debian/redis.conf with ./redis.conf.
+  * Drop copytruncate from logrotate stanza.
+  * Prefer status_of_proc over `start-stop-daemon --stop --signal 0 ...`
+    (Closes: #751839)
+
+ -- Chris Lamb <lamby@debian.org>  Tue, 17 Jun 2014 16:36:58 +0100
+
+redis (2:2.8.8-2) unstable; urgency=low
+
+  * Add systemd support. Thanks to Wasif Malik <wmalik.ml@gmail.com>.
+    (Closes: #743750)
+
+ -- Chris Lamb <lamby@debian.org>  Sun, 06 Apr 2014 11:24:36 +0100
+
+redis (2:2.8.8-1) unstable; urgency=low
+
+  * New upstream release.
+    - Sync debian/redis.conf and redis.conf.
+
+ -- Chris Lamb <lamby@debian.org>  Tue, 01 Apr 2014 19:32:15 +0100
+
+redis (2:2.8.7-2) unstable; urgency=low
+
+  * Revamp maintainer scripts. (Closes: #741216)
+
+ -- Chris Lamb <lamby@debian.org>  Mon, 10 Mar 2014 22:18:29 +0000
+
+redis (2:2.8.7-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Chris Lamb <lamby@debian.org>  Wed, 05 Mar 2014 23:16:17 +0000
+
+redis (2:2.8.6-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Chris Lamb <lamby@debian.org>  Sat, 15 Feb 2014 22:47:34 +0000
+
+redis (2:2.8.5-1) unstable; urgency=low
+
+  * New upstream release.
+  * Update debian/redis.conf to include new tcp-backlog option.
+
+ -- Chris Lamb <lamby@debian.org>  Sat, 08 Feb 2014 12:01:48 +0000
 
 redis (2:2.8.4-2) unstable; urgency=low
 

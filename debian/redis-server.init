@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 ### BEGIN INIT INFO
 # Provides:		redis-server
 # Required-Start:	$syslog $remote_fs
@@ -17,6 +17,8 @@ DAEMON=/usr/bin/redis-server
 DAEMON_ARGS=/etc/redis/redis.conf
 NAME=redis-server
 DESC=redis-server
+CONFDIR=/etc/redis/
+USER=redis
 
 RUNDIR=/var/run/redis
 PIDFILE=$RUNDIR/redis-server.pid
@@ -30,27 +32,39 @@ fi
 
 . /lib/lsb/init-functions
 
+
+if [ -f "${CONFDIR}$1.conf" ] ; then
+
+ PIDFILE=$RUNDIR/$1.pid
+ DAEMON_ARGS=$CONFDIR$1.conf
+ NAME=$1
+ if [ "$1" = "sentinel" ] ; then
+  DAEMON=/usr/bin/redis-sentinel
+ fi
+
+ toDo=$2
+else
+ for conf in $(ls -1 $CONFDIR | grep .conf$ ) ; do 
+  $0 ${conf/.conf/} $1
+ done
+ exit 0;
+fi
+
+test -n "$ULIMIT" || ULIMIT=10922
+
 set -e
 
-case "$1" in
+case "$toDo" in
   start)
 	echo -n "Starting $DESC: "
 	mkdir -p $RUNDIR
 	touch $PIDFILE
-	chown redis:redis $RUNDIR $PIDFILE
+	chown $USER: $RUNDIR $PIDFILE
 	chmod 755 $RUNDIR
 
-	if [ -n "$ULIMIT" ]
-	then
-		ulimit -n $ULIMIT
-	fi
-
-	if start-stop-daemon --start --quiet --umask 007 --pidfile $PIDFILE --chuid redis:redis --exec $DAEMON -- $DAEMON_ARGS
-	then
-		echo "$NAME."
-	else
-		echo "failed"
-	fi
+	ulimit -n $ULIMIT
+	su -s /bin/sh -c "$DAEMON $DAEMON_ARGS" $USER
+	echo "$NAME."
 	;;
   stop)
 	echo -n "Stopping $DESC: "
@@ -70,11 +84,38 @@ case "$1" in
 	;;
 
   status)
-	status_of_proc -p ${PIDFILE} ${DAEMON} ${NAME}
+	status_of_proc -p ${PIDFILE} ${DAEMON} "${NAME} $conf"
+	;;
+
+  bgsave)
+	if [ "$1" = "sentinel" ] ; then exit ; fi
+
+	if ! grep save\  ${CONFDIR}$NAME.conf | grep -v \# -q ; then 
+	 echo "$(date) [ info ] $NAME dont use rdb file"
+	 exit 0
+	fi
+
+	if ! status_of_proc -p ${PIDFILE} ${DAEMON} "${NAME} $conf" >/dev/null ; then
+	 echo "$(date) [ error ] server $NAME not running! "
+	 exit 3
+	fi
+	
+
+	Port=`grep "port" ${CONFDIR}$NAME.conf | grep -v \# | sed 's/port*\W\(*[0-9]\)*/\1/'`
+
+	startTime=`date +"%s"`
+	redis-cli -p $Port BGSAVE >/dev/null &&\
+	echo -n "$(date) [ OK ] start saving $NAME.rdb file and waiting .."
+	sleep 1;
+
+	max=600; count=1
+	while (redis-cli -p $Port info | grep -q rdb_bgsave_in_progress:1) && [ ${max} -gt ${count} ] ; do sleep 1s; count=$(($count+1)); done
+	
+	echo ".. done in" $((`date +"%s"`-${startTime})) "s";
 	;;
 
   *)
-	echo "Usage: /etc/init.d/$NAME {start|stop|restart|force-reload|status}" >&2
+	echo "Usage: /etc/init.d/redis-server $NAME {start|stop|restart|force-reload|status|bgsave}" >&2
 	exit 1
 	;;
 esac

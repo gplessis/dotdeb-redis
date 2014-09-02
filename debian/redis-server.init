@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/sh
 ### BEGIN INIT INFO
 # Provides:		redis-server
 # Required-Start:	$syslog $remote_fs
@@ -44,8 +44,8 @@ if [ -f "${CONFDIR}$1.conf" ] ; then
 
  toDo=$2
 else
- for conf in $(ls -1 $CONFDIR | grep .conf$ ) ; do 
-  $0 ${conf/.conf/} $1
+ for conf in $(ls -1 ${CONFDIR}*.conf |  sed 's@/etc/redis/\(.*\)\.conf@\1@') ; do #'
+  $0 ${conf} $1
  done
  exit 0;
 fi
@@ -56,13 +56,18 @@ set -e
 
 case "$toDo" in
   start)
-	echo -n "Starting $DESC: "
 	mkdir -p $RUNDIR
 	touch $PIDFILE
-	chown $USER: $RUNDIR $PIDFILE
+	chown ${USER}: $RUNDIR $PIDFILE
 	chmod 755 $RUNDIR
 
 	ulimit -n $ULIMIT
+	if status_of_proc -p ${PIDFILE} ${DAEMON} "${NAME}" >/dev/null ; then
+	 echo " [ fail ] server $NAME already running! "
+	 exit 4
+	fi
+	
+	echo -n "Starting $DESC: "
 	su -s /bin/sh -c "$DAEMON $DAEMON_ARGS" $USER
 	echo "$NAME."
 	;;
@@ -84,7 +89,7 @@ case "$toDo" in
 	;;
 
   status)
-	status_of_proc -p ${PIDFILE} ${DAEMON} "${NAME} $conf"
+	status_of_proc -p ${PIDFILE} ${DAEMON} "${NAME}"
 	;;
 
   bgsave)
@@ -95,7 +100,7 @@ case "$toDo" in
 	 exit 0
 	fi
 
-	if ! status_of_proc -p ${PIDFILE} ${DAEMON} "${NAME} $conf" >/dev/null ; then
+	if ! status_of_proc -p ${PIDFILE} ${DAEMON} "${NAME}" >/dev/null ; then
 	 echo "$(date) [ error ] server $NAME not running! "
 	 exit 3
 	fi

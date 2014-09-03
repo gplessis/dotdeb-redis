@@ -14,10 +14,10 @@ case "${1}" in
 			--group \
 			${USER}
 
-		for DIR in /var/lib/redis /var/log/redis
+		for DIR in /var/lib/redis /var/log/redis /etc/redis
 		do
 			mkdir -p ${DIR}
-			chown ${USER}:${GROUP} ${DIR}
+			chown ${USER}:${GROUP} -R ${DIR}
 		done
 		;;
 

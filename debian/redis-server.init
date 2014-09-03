@@ -84,8 +84,8 @@ case "$toDo" in
 	;;
 
   restart|force-reload)
-	${0} stop
-	${0} start
+	$0 $1 stop
+	$0 $1 start
 	;;
 
   status)

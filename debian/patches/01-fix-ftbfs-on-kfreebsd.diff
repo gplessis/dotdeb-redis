@@ -3,11 +3,11 @@
 # Bug-Debian: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=754634
 # Author: Chris Lamb <lamby@debian.org>
 
-diff --git a/deps/hiredis/net.c b/deps/hiredis/net.c
-index 9fe80bb..5b7917b 100644
---- a/deps/hiredis/net.c
-+++ b/deps/hiredis/net.c
-@@ -138,7 +138,7 @@ int redisKeepAlive(redisContext *c, int interval) {
+Index: dotdeb-redis/deps/hiredis/net.c
+===================================================================
+--- dotdeb-redis.orig/deps/hiredis/net.c
++++ dotdeb-redis/deps/hiredis/net.c
+@@ -138,7 +138,7 @@ int redisKeepAlive(redisContext *c, int 
          return REDIS_ERR;
      }
  #else

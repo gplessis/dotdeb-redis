@@ -17,7 +17,7 @@ case "${1}" in
 		for DIR in /var/lib/redis /var/log/redis
 		do
 			mkdir -p ${DIR}
-			chown ${USER}:${GROUP} ${DIR}
+			chown -R ${USER}:${GROUP} ${DIR}
 		done
 		;;
 

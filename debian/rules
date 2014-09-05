@@ -1,6 +1,17 @@
 #!/usr/bin/make -f
 
-unexport CFLAGS
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+CPPFLAGS:=$(shell dpkg-buildflags --get CPPFLAGS)
+CFLAGS:=$(shell dpkg-buildflags --get CFLAGS)
+LDFLAGS:=$(shell dpkg-buildflags --get LDFLAGS)
+export CPPFLAGS CFLAGS LDFLAGS
+
+ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+	NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+	MAKEFLAGS += -j$(NUMJOBS)
+	export MAKEFLAGS
+endif
 
 ifneq (,$(filter $(shell dpkg-architecture -qDEB_HOST_ARCH),armel hurd-i386 kfreebsd-amd64 kfreebsd-i386 s390 sparc))
 export FORCE_LIBC_MALLOC = yes
@@ -13,6 +24,9 @@ override_dh_auto_test:
 	# Testsuite requires working TCP/IP and a non-interactive mode
 
 override_dh_auto_install:
+
+override_dh_auto_build:
+	dh_auto_build --parallel -- V=1
 
 clean:
 	dh $@

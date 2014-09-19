@@ -1,3 +1,9 @@
+redis (2:2.8.17-1~dotdeb.0) oldstable; urgency=medium
+
+  * Imported Upstream version 2.8.17
+
+ -- Guillaume Plessis <gui@dotdeb.org>  Fri, 19 Sep 2014 14:36:32 -0700
+
 redis (2:2.8.15-1~dotdeb.0) oldstable; urgency=medium
 
   * Imported Upstream version 2.8.15

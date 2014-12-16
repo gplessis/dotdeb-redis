@@ -7,7 +7,7 @@ Index: dotdeb-redis/src/fmacros.h
 ===================================================================
 --- dotdeb-redis.orig/src/fmacros.h
 +++ dotdeb-redis/src/fmacros.h
-@@ -40,7 +40,7 @@
+@@ -41,7 +41,7 @@
  #define _ALL_SOURCE
  #endif
  

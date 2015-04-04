@@ -325,7 +325,7 @@ int rdbSaveStringObject(rio *rdb, robj *obj) {
     if (obj->encoding == REDIS_ENCODING_INT) {
         return rdbSaveLongLongAsStringObject(rdb,(long)obj->ptr);
     } else {
-        redisAssertWithInfo(NULL,obj,obj->encoding == REDIS_ENCODING_RAW);
+        redisAssertWithInfo(NULL,obj,sdsEncodedObject(obj));
         return rdbSaveRawString(rdb,obj->ptr,sdslen(obj->ptr));
     }
 }
@@ -333,7 +333,7 @@ int rdbSaveStringObject(rio *rdb, robj *obj) {
 robj *rdbGenericLoadStringObject(rio *rdb, int encode) {
     int isencoded;
     uint32_t len;
-    sds val;
+    robj *o;
 
     len = rdbLoadLen(rdb,&isencoded);
     if (isencoded) {
@@ -350,12 +350,13 @@ robj *rdbGenericLoadStringObject(rio *rdb, int encode) {
     }
 
     if (len == REDIS_RDB_LENERR) return NULL;
-    val = sdsnewlen(NULL,len);
-    if (len && rioRead(rdb,val,len) == 0) {
-        sdsfree(val);
+    o = encode ? createStringObject(NULL,len) :
+                 createRawStringObject(NULL,len);
+    if (len && rioRead(rdb,o->ptr,len) == 0) {
+        decrRefCount(o);
         return NULL;
     }
-    return createObject(REDIS_STRING,val);
+    return o;
 }
 
 robj *rdbLoadStringObject(rio *rdb) {
@@ -844,7 +845,7 @@ robj *rdbLoadObject(int rdbtype, rio *rdb) {
             /* If we are using a ziplist and the value is too big, convert
              * the object to a real list. */
             if (o->encoding == REDIS_ENCODING_ZIPLIST &&
-                ele->encoding == REDIS_ENCODING_RAW &&
+                sdsEncodedObject(ele) &&
                 sdslen(ele->ptr) > server.list_max_ziplist_value)
                     listTypeConvert(o,REDIS_ENCODING_LINKEDLIST);
 
@@ -890,7 +891,7 @@ robj *rdbLoadObject(int rdbtype, rio *rdb) {
             }
 
             /* This will also be called when the set was just converted
-             * to regular hash table encoded set */
+             * to a regular hash table encoded set */
             if (o->encoding == REDIS_ENCODING_HT) {
                 dictAdd((dict*)o->ptr,ele,NULL);
             } else {
@@ -918,9 +919,8 @@ robj *rdbLoadObject(int rdbtype, rio *rdb) {
             if (rdbLoadDoubleValue(rdb,&score) == -1) return NULL;
 
             /* Don't care about integer-encoded strings. */
-            if (ele->encoding == REDIS_ENCODING_RAW &&
-                sdslen(ele->ptr) > maxelelen)
-                    maxelelen = sdslen(ele->ptr);
+            if (sdsEncodedObject(ele) && sdslen(ele->ptr) > maxelelen)
+                maxelelen = sdslen(ele->ptr);
 
             znode = zslInsert(zs->zsl,score,ele);
             dictAdd(zs->dict,ele,&znode->score);
@@ -952,10 +952,10 @@ robj *rdbLoadObject(int rdbtype, rio *rdb) {
             /* Load raw strings */
             field = rdbLoadStringObject(rdb);
             if (field == NULL) return NULL;
-            redisAssert(field->encoding == REDIS_ENCODING_RAW);
+            redisAssert(sdsEncodedObject(field));
             value = rdbLoadStringObject(rdb);
             if (value == NULL) return NULL;
-            redisAssert(field->encoding == REDIS_ENCODING_RAW);
+            redisAssert(sdsEncodedObject(value));
 
             /* Add pair to ziplist */
             o->ptr = ziplistPush(o->ptr, field->ptr, sdslen(field->ptr), ZIPLIST_TAIL);
@@ -1087,8 +1087,9 @@ void startLoading(FILE *fp) {
     /* Load the DB */
     server.loading = 1;
     server.loading_start_time = time(NULL);
+    server.loading_loaded_bytes = 0;
     if (fstat(fileno(fp), &sb) == -1) {
-        server.loading_total_bytes = 1; /* just to avoid division by zero */
+        server.loading_total_bytes = 0;
     } else {
         server.loading_total_bytes = sb.st_size;
     }
@@ -1491,7 +1492,9 @@ int rdbSaveToSlavesSockets(void) {
             {
                 retval = REDIS_ERR;
             }
+            zfree(msg);
         }
+        zfree(clientids);
         exitFromChild((retval == REDIS_OK) ? 0 : 1);
     } else {
         /* Parent */

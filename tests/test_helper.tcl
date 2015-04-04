@@ -13,6 +13,7 @@ source tests/support/util.tcl
 
 set ::all_tests {
     unit/printver
+    unit/dump
     unit/auth
     unit/protocol
     unit/basic
@@ -37,6 +38,7 @@ set ::all_tests {
     integration/aof
     integration/rdb
     integration/convert-zipmap-hash-on-load
+    integration/logging
     unit/pubsub
     unit/slowlog
     unit/scripting
@@ -44,7 +46,6 @@ set ::all_tests {
     unit/introspection
     unit/limits
     unit/obuf-limits
-    unit/dump
     unit/bitops
     unit/memefficiency
     unit/hyperloglog

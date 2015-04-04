@@ -2,7 +2,7 @@ Author: Salvatore Sanfilippo <antirez@gmail.com>
 Download: http://redis.io/
 
 Files: *
-Copyright: © 2006-2012 Salvatore Sanfilippo <antirez@gmail.com>
+Copyright: © 2006-2014 Salvatore Sanfilippo <antirez@gmail.com>
 License: BSD
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -44,6 +44,7 @@ License: BSD
 
 Files:
  src/lzf.h
+ src/lzfP.h
  src/lzf_d.c
  src/lzf_c.c
 Copyright:
@@ -51,8 +52,19 @@ Copyright:
  © 2009-2012 Salvatore Sanfilippo <antirez@gmail.com>
 License: BSD
 
+Files: src/setproctitle.c
+Copyright:
+ © 2010 William Ahern
+ © 2013 Salvatore Sanfilippo
+ © 2013 Stam He
+License: BSD
+
 Files: src/ae_evport.c
 Copyright: © 2012 Joyent, Inc.
+License: BSD
+
+Files: src/ae_kqueue.c
+Copyright: © 2009 Harish Mallipeddi <harish.mallipeddi@gmail.com>
 License: BSD
 
 Files: utils/install_server.sh

@@ -1,3 +1,11 @@
+redis (2:3.0.0-1~dotdeb+wheezy.1) stable; urgency=medium
+
+  * Imported Upstream version 3.0.0
+  * Sync with Debian
+  * generic Dockerfile to ease Debian packaging
+
+ -- Guillaume Plessis <gui@dotdeb.org>  Fri, 03 Apr 2015 17:58:04 -0700
+
 redis (2:2.8.19-1~dotdeb.1) stable; urgency=medium
 
   * Imported Upstream version 2.8.19

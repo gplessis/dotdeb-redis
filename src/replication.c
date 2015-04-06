@@ -367,7 +367,7 @@ int masterTryPartialResynchronization(redisClient *c) {
         /* Run id "?" is used by slaves that want to force a full resync. */
         if (master_runid[0] != '?') {
             redisLog(REDIS_NOTICE,"Partial resynchronization not accepted: "
-                "Runid mismatch (Client asked for '%s', I'm '%s')",
+                "Runid mismatch (Client asked for runid '%s', my runid is '%s')",
                 master_runid, server.runid);
         } else {
             redisLog(REDIS_NOTICE,"Full resync requested by slave %s",
@@ -632,6 +632,11 @@ void replconfCommand(redisClient *c) {
                 putSlaveOnline(c);
             /* Note: this command does not reply anything! */
             return;
+        } else if (!strcasecmp(c->argv[j]->ptr,"getack")) {
+            /* REPLCONF GETACK is used in order to request an ACK ASAP
+             * to the slave. */
+            if (server.masterhost && server.master) replicationSendAck();
+            /* Note: this command does not reply anything! */
         } else {
             addReplyErrorFormat(c,"Unrecognized REPLCONF option: %s",
                 (char*)c->argv[j]->ptr);
@@ -647,7 +652,8 @@ void replconfCommand(redisClient *c) {
  *
  * It does a few things:
  *
- * 1) Put the slave in ONLINE state.
+ * 1) Put the slave in ONLINE state (useless when the function is called
+ *    because state is already ONLINE but repl_put_online_on_ack is true).
  * 2) Make sure the writable event is re-installed, since calling the SYNC
  *    command disables it, so that we can accumulate output buffer without
  *    sending it to the slave.
@@ -655,7 +661,7 @@ void replconfCommand(redisClient *c) {
 void putSlaveOnline(redisClient *slave) {
     slave->replstate = REDIS_REPL_ONLINE;
     slave->repl_put_online_on_ack = 0;
-    slave->repl_ack_time = server.unixtime;
+    slave->repl_ack_time = server.unixtime; /* Prevent false timeout. */
     if (aeCreateFileEvent(server.el, slave->fd, AE_WRITABLE,
         sendReplyToClient, slave) == AE_ERR) {
         redisLog(REDIS_WARNING,"Unable to register writable event for slave bulk transfer: %s", strerror(errno));
@@ -768,6 +774,7 @@ void updateSlavesWaitingBgsave(int bgsaveerr, int type) {
                  * is technically online now. */
                 slave->replstate = REDIS_REPL_ONLINE;
                 slave->repl_put_online_on_ack = 1;
+                slave->repl_ack_time = server.unixtime; /* Timeout otherwise. */
             } else {
                 if (bgsaveerr != REDIS_OK) {
                     freeClient(slave);
@@ -1370,7 +1377,8 @@ error:
 int connectWithMaster(void) {
     int fd;
 
-    fd = anetTcpNonBlockConnect(NULL,server.masterhost,server.masterport);
+    fd = anetTcpNonBlockBindConnect(NULL,
+        server.masterhost,server.masterport,REDIS_BIND_ADDR);
     if (fd == -1) {
         redisLog(REDIS_WARNING,"Unable to connect to MASTER: %s",
             strerror(errno));
@@ -1428,15 +1436,17 @@ int cancelReplicationHandshake(void) {
 /* Set replication to the specified master address and port. */
 void replicationSetMaster(char *ip, int port) {
     sdsfree(server.masterhost);
-    server.masterhost = sdsdup(ip);
+    server.masterhost = sdsnew(ip);
     server.masterport = port;
     if (server.master) freeClient(server.master);
+    disconnectAllBlockedClients(); /* Clients blocked in master, now slave. */
     disconnectSlaves(); /* Force our slaves to resync with us as well. */
     replicationDiscardCachedMaster(); /* Don't try a PSYNC. */
     freeReplicationBacklog(); /* Don't allow our chained slaves to PSYNC. */
     cancelReplicationHandshake();
     server.repl_state = REDIS_REPL_CONNECT;
     server.master_repl_offset = 0;
+    server.repl_down_since = 0;
 }
 
 /* Cancel replication, setting the instance as a master itself. */
@@ -1461,6 +1471,15 @@ void replicationUnsetMaster(void) {
 }
 
 void slaveofCommand(redisClient *c) {
+    /* SLAVEOF is not allowed in cluster mode as replication is automatically
+     * configured using the current address of the master node. */
+    if (server.cluster_enabled) {
+        addReplyError(c,"SLAVEOF not allowed in cluster mode.");
+        return;
+    }
+
+    /* The special host/port combination "NO" "ONE" turns the instance
+     * into a master. Otherwise the new master address is set. */
     if (!strcasecmp(c->argv[1]->ptr,"no") &&
         !strcasecmp(c->argv[2]->ptr,"one")) {
         if (server.masterhost) {
@@ -1764,7 +1783,156 @@ int replicationScriptCacheExists(sds sha1) {
     return dictFind(server.repl_scriptcache_dict,sha1) != NULL;
 }
 
-/* --------------------------- REPLICATION CRON  ----------------------------- */
+/* ----------------------- SYNCHRONOUS REPLICATION --------------------------
+ * Redis synchronous replication design can be summarized in points:
+ *
+ * - Redis masters have a global replication offset, used by PSYNC.
+ * - Master increment the offset every time new commands are sent to slaves.
+ * - Slaves ping back masters with the offset processed so far.
+ *
+ * So synchronous replication adds a new WAIT command in the form:
+ *
+ *   WAIT <num_replicas> <milliseconds_timeout>
+ *
+ * That returns the number of replicas that processed the query when
+ * we finally have at least num_replicas, or when the timeout was
+ * reached.
+ *
+ * The command is implemented in this way:
+ *
+ * - Every time a client processes a command, we remember the replication
+ *   offset after sending that command to the slaves.
+ * - When WAIT is called, we ask slaves to send an acknowledgement ASAP.
+ *   The client is blocked at the same time (see blocked.c).
+ * - Once we receive enough ACKs for a given offset or when the timeout
+ *   is reached, the WAIT command is unblocked and the reply sent to the
+ *   client.
+ */
+
+/* This just set a flag so that we broadcast a REPLCONF GETACK command
+ * to all the slaves in the beforeSleep() function. Note that this way
+ * we "group" all the clients that want to wait for synchronouns replication
+ * in a given event loop iteration, and send a single GETACK for them all. */
+void replicationRequestAckFromSlaves(void) {
+    server.get_ack_from_slaves = 1;
+}
+
+/* Return the number of slaves that already acknowledged the specified
+ * replication offset. */
+int replicationCountAcksByOffset(long long offset) {
+    listIter li;
+    listNode *ln;
+    int count = 0;
+
+    listRewind(server.slaves,&li);
+    while((ln = listNext(&li))) {
+        redisClient *slave = ln->value;
+
+        if (slave->replstate != REDIS_REPL_ONLINE) continue;
+        if (slave->repl_ack_off >= offset) count++;
+    }
+    return count;
+}
+
+/* WAIT for N replicas to acknowledge the processing of our latest
+ * write command (and all the previous commands). */
+void waitCommand(redisClient *c) {
+    mstime_t timeout;
+    long numreplicas, ackreplicas;
+    long long offset = c->woff;
+
+    /* Argument parsing. */
+    if (getLongFromObjectOrReply(c,c->argv[1],&numreplicas,NULL) != REDIS_OK)
+        return;
+    if (getTimeoutFromObjectOrReply(c,c->argv[2],&timeout,UNIT_MILLISECONDS)
+        != REDIS_OK) return;
+
+    /* First try without blocking at all. */
+    ackreplicas = replicationCountAcksByOffset(c->woff);
+    if (ackreplicas >= numreplicas || c->flags & REDIS_MULTI) {
+        addReplyLongLong(c,ackreplicas);
+        return;
+    }
+
+    /* Otherwise block the client and put it into our list of clients
+     * waiting for ack from slaves. */
+    c->bpop.timeout = timeout;
+    c->bpop.reploffset = offset;
+    c->bpop.numreplicas = numreplicas;
+    listAddNodeTail(server.clients_waiting_acks,c);
+    blockClient(c,REDIS_BLOCKED_WAIT);
+
+    /* Make sure that the server will send an ACK request to all the slaves
+     * before returning to the event loop. */
+    replicationRequestAckFromSlaves();
+}
+
+/* This is called by unblockClient() to perform the blocking op type
+ * specific cleanup. We just remove the client from the list of clients
+ * waiting for replica acks. Never call it directly, call unblockClient()
+ * instead. */
+void unblockClientWaitingReplicas(redisClient *c) {
+    listNode *ln = listSearchKey(server.clients_waiting_acks,c);
+    redisAssert(ln != NULL);
+    listDelNode(server.clients_waiting_acks,ln);
+}
+
+/* Check if there are clients blocked in WAIT that can be unblocked since
+ * we received enough ACKs from slaves. */
+void processClientsWaitingReplicas(void) {
+    long long last_offset = 0;
+    int last_numreplicas = 0;
+
+    listIter li;
+    listNode *ln;
+
+    listRewind(server.clients_waiting_acks,&li);
+    while((ln = listNext(&li))) {
+        redisClient *c = ln->value;
+
+        /* Every time we find a client that is satisfied for a given
+         * offset and number of replicas, we remember it so the next client
+         * may be unblocked without calling replicationCountAcksByOffset()
+         * if the requested offset / replicas were equal or less. */
+        if (last_offset && last_offset > c->bpop.reploffset &&
+                           last_numreplicas > c->bpop.numreplicas)
+        {
+            unblockClient(c);
+            addReplyLongLong(c,last_numreplicas);
+        } else {
+            int numreplicas = replicationCountAcksByOffset(c->bpop.reploffset);
+
+            if (numreplicas >= c->bpop.numreplicas) {
+                last_offset = c->bpop.reploffset;
+                last_numreplicas = numreplicas;
+                unblockClient(c);
+                addReplyLongLong(c,numreplicas);
+            }
+        }
+    }
+}
+
+/* Return the slave replication offset for this instance, that is
+ * the offset for which we already processed the master replication stream. */
+long long replicationGetSlaveOffset(void) {
+    long long offset = 0;
+
+    if (server.masterhost != NULL) {
+        if (server.master) {
+            offset = server.master->reploff;
+        } else if (server.cached_master) {
+            offset = server.cached_master->reploff;
+        }
+    }
+    /* offset may be -1 when the master does not support it at all, however
+     * this function is designed to return an offset that can express the
+     * amount of data processed by the master, so we return a positive
+     * integer. */
+    if (offset < 0) offset = 0;
+    return offset;
+}
+
+/* --------------------------- REPLICATION CRON  ---------------------------- */
 
 /* Replication cron function, called 1 time per second. */
 void replicationCron(void) {

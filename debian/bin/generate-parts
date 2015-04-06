@@ -1,0 +1,51 @@
+#!/bin/sh
+
+for PKG in redis-server redis-sentinel
+do
+	for ACTION in pre-up post-up pre-down post-down
+	do
+		DIR="debian/${PKG}/etc/redis/${PKG}.${ACTION}.d"
+		FILE="${DIR}/00_example"
+
+		case "${ACTION}" in
+		pre-up)
+			TEXT="before ${PKG} is started"
+			;;
+		post-up)
+			TEXT="after ${PKG} has started"
+			;;
+		pre-down)
+			TEXT="before ${PKG} is stopped"
+			;;
+		post-down)
+			TEXT="after ${PKG} has stopped"
+			;;
+		esac
+
+		mkdir -p ${DIR}
+		touch ${FILE}
+		chmod +x ${FILE}
+
+cat > ${FILE} <<EOF
+#!/bin/sh
+#
+# Example script executed ${TEXT}.
+#
+# All executable files within this directory are executed in lexical sort
+# order. Filenames must consist entirely of ASCII upper- and lower-case
+# letters, digits, underscores, and hyphens. If the script returns with a
+# non-zero exit code, no further scripts are run.
+#
+# Example:
+#
+#    redis-cli SCRIPT LOAD "\$(cat /path/to/script.lua)" >/dev/null
+#
+# Scripts should be idempotent so that multiple calls to (eg.)
+# "/etc/init.d/${PKG} start" does not result in unintended consequences.
+
+set -eu
+
+exit 0
+EOF
+	done
+done

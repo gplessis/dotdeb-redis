@@ -1,11 +1,9 @@
 #!/usr/bin/make -f
 
-export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+include /usr/share/dpkg/buildflags.mk
 
-CPPFLAGS:=$(shell dpkg-buildflags --get CPPFLAGS)
-CFLAGS:=$(shell dpkg-buildflags --get CFLAGS)
-LDFLAGS:=$(shell dpkg-buildflags --get LDFLAGS)
-export CPPFLAGS CFLAGS LDFLAGS
+export CFLAGS CPPFLAGS LDFLAGS
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
 	NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
@@ -20,13 +18,17 @@ endif
 %:
 	dh $@
 
-override_dh_auto_test:
-	# Testsuite requires working TCP/IP and a non-interactive mode
-
 override_dh_auto_install:
+	debian/bin/generate-parts
 
 override_dh_auto_build:
 	dh_auto_build --parallel -- V=1
+
+override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	./runtest || true
+	./runtest-sentinel || true
+endif
 
 clean:
 	dh $@

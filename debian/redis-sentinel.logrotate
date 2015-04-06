@@ -1,4 +1,4 @@
-/var/log/redis/redis-server*.log {
+/var/log/redis/redis-sentinel*.log {
         weekly
         missingok
         rotate 12

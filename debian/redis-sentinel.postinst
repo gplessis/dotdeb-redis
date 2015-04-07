@@ -1,0 +1,18 @@
+#! /bin/sh
+
+set -e
+
+USER="redis"
+GROUP="$USER"
+CONFFILE="/etc/redis/sentinel.conf"
+
+if [ "$1" = "configure" ]; then
+	if ! dpkg-statoverride --list ${CONFFILE} >/dev/null 2>&1
+	then
+		dpkg-statoverride --update --add ${USER} ${GROUP} 644 ${CONFFILE}
+	fi
+fi
+
+#DEBHELPER#
+
+exit 0

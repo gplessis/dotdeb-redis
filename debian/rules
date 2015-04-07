@@ -1,0 +1,35 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/buildflags.mk
+
+export CFLAGS CPPFLAGS LDFLAGS
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+	NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+	MAKEFLAGS += -j$(NUMJOBS)
+	export MAKEFLAGS
+endif
+
+ifneq (,$(filter $(shell dpkg-architecture -qDEB_HOST_ARCH),armel hurd-i386 kfreebsd-amd64 kfreebsd-i386 s390 sparc))
+export FORCE_LIBC_MALLOC = yes
+endif
+
+%:
+	dh $@ --with systemd
+
+override_dh_auto_install:
+	debian/bin/generate-parts
+
+override_dh_auto_build:
+	dh_auto_build --parallel -- V=1
+
+override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	./runtest || true
+	./runtest-sentinel || true
+endif
+
+clean:
+	dh $@
+	rm -f src/release.h

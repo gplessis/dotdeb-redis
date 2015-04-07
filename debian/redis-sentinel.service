@@ -1,0 +1,14 @@
+[Unit]
+Description=Advanced key-value store
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/redis-sentinel /etc/redis/sentinel.conf
+ExecStop=/usr/bin/redis-cli -p 26379 shutdown
+Restart=always
+User=redis
+Group=redis
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,12 @@
+#! /bin/sh
+
+set -e
+
+CONFFILE="/etc/redis/sentinel.conf"
+
+if [ "$1" = "purge" ]
+then
+	dpkg-statoverride --remove ${CONFFILE} || test $? -eq 2
+fi
+
+#DEBHELPER#

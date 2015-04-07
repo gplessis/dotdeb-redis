@@ -1,0 +1,4 @@
+01-fix-ftbfs-on-kfreebsd.diff -p1
+02-fix-ftbfs-on-kfreebsd -p1
+04-dpkg-buildflags.diff -p1
+05-reproducible-build.diff -p1

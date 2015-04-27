@@ -33,7 +33,6 @@ RUN mk-build-deps --install --tool 'apt-get -y' --remove /root/control && rm -f 
 ADD . /usr/src/builddir
 WORKDIR /usr/src/builddir
 
-RUN rm -f debian/Dockerfile
 RUN uscan --download-current-version
 RUN dpkg-buildpackage
 

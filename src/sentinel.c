@@ -923,6 +923,7 @@ sentinelRedisInstance *createSentinelRedisInstance(char *name, int flags, char *
     else if (flags & SRI_SENTINEL) table = master->sentinels;
     sdsname = sdsnew(name);
     if (dictFind(table,sdsname)) {
+        releaseSentinelAddr(addr);
         sdsfree(sdsname);
         errno = EBUSY;
         return NULL;
@@ -1269,10 +1270,7 @@ int sentinelResetMasterAndChangeAddress(sentinelRedisInstance *master, char *ip,
         slave = createSentinelRedisInstance(NULL,SRI_SLAVE,slaves[j]->ip,
                     slaves[j]->port, master->quorum, master);
         releaseSentinelAddr(slaves[j]);
-        if (slave) {
-            sentinelEvent(REDIS_NOTICE,"+slave",slave,"%@");
-            sentinelFlushConfig();
-        }
+        if (slave) sentinelEvent(REDIS_NOTICE,"+slave",slave,"%@");
     }
     zfree(slaves);
 
@@ -1844,6 +1842,7 @@ void sentinelRefreshInstanceInfo(sentinelRedisInstance *ri, const char *info) {
                             atoi(port), ri->quorum, ri)) != NULL)
                 {
                     sentinelEvent(REDIS_NOTICE,"+slave",slave,"%@");
+                    sentinelFlushConfig();
                 }
             }
         }

@@ -1,3 +1,10 @@
+redis (2:3.0.3-1~dotdeb+6.1) oldoldstable; urgency=medium
+
+  * Imported Upstream version 3.0.3
+  * Sync with Debian
+
+ -- Guillaume Plessis <gui@dotdeb.org>  Fri, 17 Jul 2015 04:06:35 -0700
+
 redis (2:3.0.2-1~dotdeb+6.1) oldoldstable; urgency=medium
 
   * Imported Upstream version 3.0.2

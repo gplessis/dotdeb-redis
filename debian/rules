@@ -30,6 +30,9 @@ ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 	./runtest-sentinel || true
 endif
 
+override_dh_compress:
+	dh_compress -Xredis-trib.rb
+
 clean:
 	dh $@
 	rm -f src/release.h

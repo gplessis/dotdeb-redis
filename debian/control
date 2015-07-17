@@ -26,6 +26,7 @@ Description: Persistent key-value database with network interface
 Package: redis-tools
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
+Suggests: ruby-redis
 Replaces: redis-server (<< 2:2.6.16-1)
 Breaks: redis-server (<< 2:2.6.16-1)
 Description: Persistent key-value database with network interface (client)

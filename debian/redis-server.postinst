@@ -8,9 +8,9 @@ GROUP="$USER"
 case "${1}" in
 	configure)
 		adduser \
+			--system \
 			--home /var/lib/redis \
 			--quiet \
-			--system \
 			--group \
 			${USER}
 

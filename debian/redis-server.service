@@ -4,13 +4,9 @@ After=network.target
 
 [Service]
 Type=forking
-PermissionsStartOnly=true
-ExecStartPre=-/bin/mkdir /var/run/redis
-ExecStartPre=/bin/chown redis:redis /var/run/redis
 ExecStart=/usr/bin/redis-server /etc/redis/redis.conf
-ExecStop=/usr/bin/redis-cli shutdown
+TimeoutStopSec=0
 Restart=always
-RuntimeDirectory=redis
 User=redis
 Group=redis
 

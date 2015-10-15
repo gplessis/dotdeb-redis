@@ -4,6 +4,7 @@ set -eu
 
 USER="redis"
 GROUP="$USER"
+CONFFILE="/etc/redis/redis.conf"
 
 case "${1}" in
 	configure)
@@ -19,6 +20,11 @@ case "${1}" in
 			mkdir -p ${DIR}
 			chown -R ${USER}:${GROUP} ${DIR}
 		done
+
+		if ! dpkg-statoverride --list ${CONFFILE} >/dev/null 2>&1
+		then
+			dpkg-statoverride --update --add ${USER} ${GROUP} 640 ${CONFFILE}
+		fi
 		;;
 
 	abort-upgrade|abort-remove|abort-deconfigure)

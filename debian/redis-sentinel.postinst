@@ -9,7 +9,7 @@ CONFFILE="/etc/redis/sentinel.conf"
 if [ "$1" = "configure" ]; then
 	if ! dpkg-statoverride --list ${CONFFILE} >/dev/null 2>&1
 	then
-		dpkg-statoverride --update --add ${USER} ${GROUP} 644 ${CONFFILE}
+		dpkg-statoverride --update --add ${USER} ${GROUP} 640 ${CONFFILE}
 	fi
 fi
 

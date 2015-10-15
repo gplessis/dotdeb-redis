@@ -2,8 +2,12 @@
 
 set -e
 
+CONFFILE="/etc/redis/redis.conf"
+
 if [ "${1}" = "purge" ]
 then
+	dpkg-statoverride --remove ${CONFFILE} || test $? -eq 2
+
 	userdel redis || true
 	rm -rf /var/lib/redis /var/log/redis
 fi

@@ -35,7 +35,7 @@ set -e
 Run_parts () {
 	if [ -d /etc/redis/${NAME}.${1}.d ]
 	then
-		run-parts --exit-on-error /etc/redis/${NAME}.${1}.d
+		su redis -s /bin/sh -c "run-parts --exit-on-error /etc/redis/${NAME}.${1}.d"
 	fi
 }
 

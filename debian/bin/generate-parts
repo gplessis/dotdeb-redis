@@ -36,6 +36,8 @@ cat > ${FILE} <<EOF
 # letters, digits, underscores, and hyphens. If the script returns with a
 # non-zero exit code, no further scripts are run.
 #
+# Scripts are run by the 'redis' user and associated run-time environment.
+#
 # Example:
 #
 #    redis-cli SCRIPT LOAD "\$(cat /path/to/script.lua)" >/dev/null

@@ -1,3 +1,11 @@
+From: Chris Lamb <lamby@debian.org>
+Date: Fri, 30 Oct 2015 10:53:42 +0000
+Subject: reproducible-build
+
+---
+ src/mkreleasehdr.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
 Index: dotdeb-redis/src/mkreleasehdr.sh
 ===================================================================
 --- dotdeb-redis.orig/src/mkreleasehdr.sh

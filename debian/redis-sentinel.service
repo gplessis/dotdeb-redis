@@ -15,7 +15,7 @@ Group=redis
 ExecStartPre=-/bin/run-parts --verbose /etc/redis/redis-sentinel.pre-up.d
 ExecStartPost=-/bin/run-parts --verbose /etc/redis/redis-sentinel.post-up.d
 ExecStop=-/bin/run-parts --verbose /etc/redis/redis-sentinel.pre-down.d
-ExecStop=/bin/kill -TERM $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
 ExecStopPost=-/bin/run-parts --verbose /etc/redis/redis-sentinel.post-down.d
 
 PrivateTmp=yes

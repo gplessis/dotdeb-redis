@@ -1,7 +1,14 @@
+From: Chris Lamb <lamby@debian.org>
+Date: Fri, 30 Oct 2015 10:53:42 +0000
+Subject: fix-ftbfs-on-kfreebsd
+
 # Description: Fix FTBFS on kfreebsd
 # Bug: https://github.com/antirez/redis/pull/67
 # Bug-Debian: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=632499
 # Author: Christoph Egger <christoph@debian.org>
+---
+ src/fmacros.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 Index: dotdeb-redis/src/fmacros.h
 ===================================================================

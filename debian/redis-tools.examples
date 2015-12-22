@@ -1,2 +1,2 @@
-utils/lru
 src/redis-trib.rb
+utils/lru

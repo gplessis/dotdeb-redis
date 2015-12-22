@@ -1527,16 +1527,39 @@ void rewriteClientCommandVector(redisClient *c, int argc, ...) {
     va_end(ap);
 }
 
+/* Completely replace the client command vector with the provided one. */
+void replaceClientCommandVector(redisClient *c, int argc, robj **argv) {
+    freeClientArgv(c);
+    zfree(c->argv);
+    c->argv = argv;
+    c->argc = argc;
+    c->cmd = lookupCommandOrOriginal(c->argv[0]->ptr);
+    redisAssertWithInfo(c,NULL,c->cmd != NULL);
+}
+
 /* Rewrite a single item in the command vector.
- * The new val ref count is incremented, and the old decremented. */
+ * The new val ref count is incremented, and the old decremented.
+ *
+ * It is possible to specify an argument over the current size of the
+ * argument vector: in this case the array of objects gets reallocated
+ * and c->argc set to the max value. However it's up to the caller to
+ *
+ * 1. Make sure there are no "holes" and all the arguments are set.
+ * 2. If the original argument vector was longer than the one we
+ *    want to end with, it's up to the caller to set c->argc and
+ *    free the no longer used objects on c->argv. */
 void rewriteClientCommandArgument(redisClient *c, int i, robj *newval) {
     robj *oldval;
 
-    redisAssertWithInfo(c,NULL,i < c->argc);
+    if (i >= c->argc) {
+        c->argv = zrealloc(c->argv,sizeof(robj*)*(i+1));
+        c->argc = i+1;
+        c->argv[i] = NULL;
+    }
     oldval = c->argv[i];
     c->argv[i] = newval;
     incrRefCount(newval);
-    decrRefCount(oldval);
+    if (oldval) decrRefCount(oldval);
 
     /* If this is the command name make sure to fix c->cmd. */
     if (i == 0) {

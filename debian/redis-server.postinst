@@ -13,7 +13,7 @@ case "${1}" in
 			--home /var/lib/redis \
 			--quiet \
 			--group \
-			${USER}
+			${USER} || true
 
 		for DIR in /var/lib/redis /var/log/redis
 		do

@@ -1,33 +1,13 @@
-Author: Guillaume Delacour <gui@iroqwa.org>
+From: Chris Lamb <lamby@debian.org>
+Date: Fri, 30 Oct 2015 10:53:42 +0000
 Subject: Add CPPFLAGS in upstream makefiles
-Last-Update: 2014-09-05
 
-Index: dotdeb-redis/src/Makefile
-===================================================================
---- dotdeb-redis.orig/src/Makefile
-+++ dotdeb-redis/src/Makefile
-@@ -94,7 +94,7 @@ ifeq ($(MALLOC),jemalloc)
- 	FINAL_LIBS+= ../deps/jemalloc/lib/libjemalloc.a -ldl
- endif
- 
--REDIS_CC=$(QUIET_CC)$(CC) $(FINAL_CFLAGS)
-+REDIS_CC=$(QUIET_CC)$(CC) $(FINAL_CFLAGS) $(CPPFLAGS)
- REDIS_LD=$(QUIET_LINK)$(CC) $(FINAL_LDFLAGS)
- REDIS_INSTALL=$(QUIET_INSTALL)$(INSTALL)
- 
-Index: dotdeb-redis/deps/linenoise/Makefile
-===================================================================
---- dotdeb-redis.orig/deps/linenoise/Makefile
-+++ dotdeb-redis/deps/linenoise/Makefile
-@@ -6,7 +6,7 @@ R_CFLAGS= $(STD) $(WARN) $(OPT) $(DEBUG)
- R_LDFLAGS= $(LDFLAGS)
- DEBUG= -g
- 
--R_CC=$(CC) $(R_CFLAGS)
-+R_CC=$(CC) $(R_CFLAGS) $(CPPFLAGS)
- R_LD=$(CC) $(R_LDFLAGS)
- 
- linenoise.o: linenoise.h linenoise.c
+---
+ deps/hiredis/Makefile   | 2 +-
+ deps/linenoise/Makefile | 2 +-
+ src/Makefile            | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
 Index: dotdeb-redis/deps/hiredis/Makefile
 ===================================================================
 --- dotdeb-redis.orig/deps/hiredis/Makefile
@@ -41,3 +21,29 @@ Index: dotdeb-redis/deps/hiredis/Makefile
  REAL_LDFLAGS=$(LDFLAGS) $(ARCH)
  
  DYLIBSUFFIX=so
+Index: dotdeb-redis/deps/linenoise/Makefile
+===================================================================
+--- dotdeb-redis.orig/deps/linenoise/Makefile
++++ dotdeb-redis/deps/linenoise/Makefile
+@@ -6,7 +6,7 @@ R_CFLAGS= $(STD) $(WARN) $(OPT) $(DEBUG)
+ R_LDFLAGS= $(LDFLAGS)
+ DEBUG= -g
+ 
+-R_CC=$(CC) $(R_CFLAGS)
++R_CC=$(CC) $(R_CFLAGS) $(CPPFLAGS)
+ R_LD=$(CC) $(R_LDFLAGS)
+ 
+ linenoise.o: linenoise.h linenoise.c
+Index: dotdeb-redis/src/Makefile
+===================================================================
+--- dotdeb-redis.orig/src/Makefile
++++ dotdeb-redis/src/Makefile
+@@ -94,7 +94,7 @@ ifeq ($(MALLOC),jemalloc)
+ 	FINAL_LIBS+= ../deps/jemalloc/lib/libjemalloc.a -ldl
+ endif
+ 
+-REDIS_CC=$(QUIET_CC)$(CC) $(FINAL_CFLAGS)
++REDIS_CC=$(QUIET_CC)$(CC) $(FINAL_CFLAGS) $(CPPFLAGS)
+ REDIS_LD=$(QUIET_LINK)$(CC) $(FINAL_LDFLAGS)
+ REDIS_INSTALL=$(QUIET_INSTALL)$(INSTALL)
+ 

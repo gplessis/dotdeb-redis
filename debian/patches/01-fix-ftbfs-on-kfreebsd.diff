@@ -1,7 +1,14 @@
+From: Chris Lamb <lamby@debian.org>
+Date: Fri, 30 Oct 2015 10:53:42 +0000
+Subject: fix-ftbfs-on-kfreebsd
+
 # Description: Fix FTBFS on kfreebsd
 # Bug: https://github.com/redis/hiredis/pull/254
 # Bug-Debian: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=754634
 # Author: Chris Lamb <lamby@debian.org>
+---
+ deps/hiredis/net.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 Index: dotdeb-redis/deps/hiredis/net.c
 ===================================================================

@@ -415,7 +415,7 @@ void _redisAssertPrintClientInfo(redisClient *c) {
         if (c->argv[j]->type == REDIS_STRING && sdsEncodedObject(c->argv[j])) {
             arg = (char*) c->argv[j]->ptr;
         } else {
-            snprintf(buf,sizeof(buf),"Object type: %d, encoding: %d",
+            snprintf(buf,sizeof(buf),"Object type: %u, encoding: %u",
                 c->argv[j]->type, c->argv[j]->encoding);
             arg = buf;
         }
@@ -811,6 +811,10 @@ void sigsegvHandler(int sig, siginfo_t *info, void *secret) {
     bugReportStart();
     redisLog(REDIS_WARNING,
         "    Redis %s crashed by signal: %d", REDIS_VERSION, sig);
+    if (sig == SIGSEGV) {
+        redisLog(REDIS_WARNING,
+        "    SIGSEGV caused by address: %p", (void*)info->si_addr);
+    }
     redisLog(REDIS_WARNING,
         "    Failed assertion: %s (%s:%d)", server.assert_failed,
                         server.assert_file, server.assert_line);

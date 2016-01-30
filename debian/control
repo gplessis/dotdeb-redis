@@ -5,10 +5,11 @@ Maintainer: Guillaume Plessis <gui@dotdeb.org>
 Build-Depends:
  debhelper (>= 9),
  dh-systemd (>= 1.5),
+ procps,
  tcl
 Standards-Version: 3.9.6
 Homepage: http://redis.io/
-Vcs-Git: git://github.com/lamby/pkg-redis.git
+Vcs-Git: https://github.com/lamby/pkg-redis.git
 Vcs-Browser: https://github.com/lamby/pkg-redis
 
 Package: redis-server

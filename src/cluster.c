@@ -806,12 +806,6 @@ int clusterNodeAddSlave(clusterNode *master, clusterNode *slave) {
     return REDIS_OK;
 }
 
-void clusterNodeResetSlaves(clusterNode *n) {
-    zfree(n->slaves);
-    n->numslaves = 0;
-    n->slaves = NULL;
-}
-
 int clusterCountNonFailingSlaves(clusterNode *n) {
     int j, okslaves = 0;
 
@@ -825,12 +819,10 @@ void freeClusterNode(clusterNode *n) {
     sds nodename;
     int j;
 
-    /* If the node is a master with associated slaves, we have to set
+    /* If the node has associated slaves, we have to set
      * all the slaves->slaveof fields to NULL (unknown). */
-    if (nodeIsMaster(n)) {
-        for (j = 0; j < n->numslaves; j++)
-            n->slaves[j]->slaveof = NULL;
-    }
+    for (j = 0; j < n->numslaves; j++)
+        n->slaves[j]->slaveof = NULL;
 
     /* Remove this node from the list of slaves of its master. */
     if (nodeIsSlave(n) && n->slaveof) clusterNodeRemoveSlave(n->slaveof,n);
@@ -948,7 +940,7 @@ uint64_t clusterGetMaxEpoch(void) {
 /* If this node epoch is zero or is not already the greatest across the
  * cluster (from the POV of the local configuration), this function will:
  *
- * 1) Generate a new config epoch increment the current epoch.
+ * 1) Generate a new config epoch, incrementing the current epoch.
  * 2) Assign the new epoch to this node, WITHOUT any consensus.
  * 3) Persist the configuration on disk before sending packets with the
  *    new configuration.
@@ -963,16 +955,16 @@ uint64_t clusterGetMaxEpoch(void) {
  * cases:
  *
  * 1) When slots are closed after importing. Otherwise resharding would be
- *    too exansive.
+ *    too expansive.
  * 2) When CLUSTER FAILOVER is called with options that force a slave to
  *    failover its master even if there is not master majority able to
  *    create a new configuration epoch.
  *
- * Redis Cluster does not explode using this function, even in the case of
+ * Redis Cluster will not explode using this function, even in the case of
  * a collision between this node and another node, generating the same
  * configuration epoch unilaterally, because the config epoch conflict
  * resolution algorithm will eventually move colliding nodes to different
- * config epochs. However usign this function may violate the "last failover
+ * config epochs. However using this function may violate the "last failover
  * wins" rule, so should only be used with care. */
 int clusterBumpConfigEpochWithoutConsensus(void) {
     uint64_t maxEpoch = clusterGetMaxEpoch();
@@ -1544,9 +1536,6 @@ int clusterProcessPacket(clusterLink *link) {
     clusterMsg *hdr = (clusterMsg*) link->rcvbuf;
     uint32_t totlen = ntohl(hdr->totlen);
     uint16_t type = ntohs(hdr->type);
-    uint16_t flags = ntohs(hdr->flags);
-    uint64_t senderCurrentEpoch = 0, senderConfigEpoch = 0;
-    clusterNode *sender;
 
     server.cluster->stats_bus_messages_received++;
     redisLog(REDIS_DEBUG,"--- Processing packet of type %d, %lu bytes",
@@ -1554,9 +1543,17 @@ int clusterProcessPacket(clusterLink *link) {
 
     /* Perform sanity checks */
     if (totlen < 16) return 1; /* At least signature, version, totlen, count. */
-    if (ntohs(hdr->ver) != CLUSTER_PROTO_VER)
-        return 1; /* Can't handle versions other than the current one.*/
     if (totlen > sdslen(link->rcvbuf)) return 1;
+
+    if (ntohs(hdr->ver) != CLUSTER_PROTO_VER) {
+        /* Can't handle messages of different versions. */
+        return 1;
+    }
+
+    uint16_t flags = ntohs(hdr->flags);
+    uint64_t senderCurrentEpoch = 0, senderConfigEpoch = 0;
+    clusterNode *sender;
+
     if (type == CLUSTERMSG_TYPE_PING || type == CLUSTERMSG_TYPE_PONG ||
         type == CLUSTERMSG_TYPE_MEET)
     {
@@ -1774,9 +1771,6 @@ int clusterProcessPacket(clusterLink *link) {
                     sender->flags &= ~(REDIS_NODE_MASTER|
                                        REDIS_NODE_MIGRATE_TO);
                     sender->flags |= REDIS_NODE_SLAVE;
-
-                    /* Remove the list of slaves from the node. */
-                    if (sender->numslaves) clusterNodeResetSlaves(sender);
 
                     /* Update config and state. */
                     clusterDoBeforeSleep(CLUSTER_TODO_SAVE_CONFIG|
@@ -3940,6 +3934,11 @@ void clusterCommand(redisClient *c) {
         int slot;
         clusterNode *n;
 
+        if (nodeIsSlave(myself)) {
+            addReplyError(c,"Please use SETSLOT only with masters.");
+            return;
+        }
+
         if ((slot = getSlotOrReply(c,c->argv[2])) == -1) return;
 
         if (!strcasecmp(c->argv[3]->ptr,"migrating") && c->argc == 5) {
@@ -4024,6 +4023,13 @@ void clusterCommand(redisClient *c) {
         }
         clusterDoBeforeSleep(CLUSTER_TODO_SAVE_CONFIG|CLUSTER_TODO_UPDATE_STATE);
         addReply(c,shared.ok);
+    } else if (!strcasecmp(c->argv[1]->ptr,"bumpepoch") && c->argc == 2) {
+        /* CLUSTER BUMPEPOCH */
+        int retval = clusterBumpConfigEpochWithoutConsensus();
+        sds reply = sdscatprintf(sdsempty(),"+%s %llu\r\n",
+                (retval == REDIS_OK) ? "BUMPED" : "STILL",
+                (unsigned long long) myself->configEpoch);
+        addReplySds(c,reply);
     } else if (!strcasecmp(c->argv[1]->ptr,"info") && c->argc == 2) {
         /* CLUSTER INFO */
         char *statestr[] = {"ok","fail","needhelp"};
@@ -4600,10 +4606,11 @@ void migrateCommand(redisClient *c) {
     long timeout;
     long dbid;
     long long ttl, expireat;
-    robj **ov = zmalloc(sizeof(robj*)); /* Objects to migrate. */
-    robj **kv = zmalloc(sizeof(robj*)); /* Key names. */
+    robj **ov = NULL; /* Objects to migrate. */
+    robj **kv = NULL; /* Key names. */
+    robj **newargv = NULL; /* Used to rewrite the command as DEL ... keys ... */
     rio cmd, payload;
-    int retry_num = 0;
+    int may_retry = 1;
     int write_error = 0;
 
     /* To support the KEYS option we need the following additional state. */
@@ -4626,13 +4633,10 @@ void migrateCommand(redisClient *c) {
                 addReplyError(c,
                     "When using MIGRATE KEYS option, the key argument"
                     " must be set to the empty string");
-                zfree(ov); zfree(kv);
                 return;
             }
             first_key = j+1;
             num_keys = c->argc - j - 1;
-            ov = zrealloc(ov,sizeof(robj*)*num_keys);
-            kv = zrealloc(kv,sizeof(robj*)*num_keys);
             break; /* All the remaining args are keys. */
         } else {
             addReply(c,shared.syntaxerr);
@@ -4641,10 +4645,11 @@ void migrateCommand(redisClient *c) {
     }
 
     /* Sanity check */
-    if (getLongFromObjectOrReply(c,c->argv[5],&timeout,NULL) != REDIS_OK)
+    if (getLongFromObjectOrReply(c,c->argv[5],&timeout,NULL) != REDIS_OK ||
+        getLongFromObjectOrReply(c,c->argv[4],&dbid,NULL) != REDIS_OK)
+    {
         return;
-    if (getLongFromObjectOrReply(c,c->argv[4],&dbid,NULL) != REDIS_OK)
-        return;
+    }
     if (timeout <= 0) timeout = 1000;
 
     /* Check if the keys are here. If at least one key is to migrate, do it
@@ -4652,7 +4657,10 @@ void migrateCommand(redisClient *c) {
      * the caller there was nothing to migrate. We don't return an error in
      * this case, since often this is due to a normal condition like the key
      * expiring in the meantime. */
+    ov = zrealloc(ov,sizeof(robj*)*num_keys);
+    kv = zrealloc(kv,sizeof(robj*)*num_keys);
     int oi = 0;
+
     for (j = 0; j < num_keys; j++) {
         if ((ov[oi] = lookupKeyRead(c->db,c->argv[first_key+j])) != NULL) {
             kv[oi] = c->argv[first_key+j];
@@ -4671,7 +4679,10 @@ try_again:
 
     /* Connect */
     cs = migrateGetSocket(c,c->argv[1],c->argv[2],timeout);
-    if (cs == NULL) return; /* error sent to the client by migrateGetSocket() */
+    if (cs == NULL) {
+        zfree(ov); zfree(kv);
+        return; /* error sent to the client by migrateGetSocket() */
+    }
 
     rioInitWithBuffer(&cmd,sdsempty());
 
@@ -4742,14 +4753,16 @@ try_again:
 
     /* Read the RESTORE replies. */
     int error_from_target = 0;
+    int socket_error = 0;
     int del_idx = 1; /* Index of the key argument for the replicated DEL op. */
-    robj **newargv = NULL;
 
     if (!copy) newargv = zmalloc(sizeof(robj*)*(num_keys+1));
 
     for (j = 0; j < num_keys; j++) {
-        if (syncReadLine(cs->fd, buf2, sizeof(buf2), timeout) <= 0)
-            goto socket_err;
+        if (syncReadLine(cs->fd, buf2, sizeof(buf2), timeout) <= 0) {
+            socket_error = 1;
+            break;
+        }
         if ((select && buf1[0] == '-') || buf2[0] == '-') {
             /* On error assume that last_dbid is no longer valid. */
             if (!error_from_target) {
@@ -4772,36 +4785,70 @@ try_again:
         }
     }
 
+    /* On socket error, if we want to retry, do it now before rewriting the
+     * command vector. We only retry if we are sure nothing was processed
+     * and we failed to read the first reply (j == 0 test). */
+    if (!error_from_target && socket_error && j == 0 && may_retry &&
+        errno != ETIMEDOUT)
+    {
+        goto socket_err; /* A retry is guaranteed because of tested conditions.*/
+    }
+
     if (!copy) {
         /* Translate MIGRATE as DEL for replication/AOF. */
         if (del_idx > 1) {
             newargv[0] = createStringObject("DEL",3);
+            /* Note that the following call takes ownership of newargv. */
             replaceClientCommandVector(c,del_idx,newargv);
         } else {
             /* No key transfer acknowledged, no need to rewrite as DEL. */
             zfree(newargv);
         }
+        newargv = NULL; /* Make it safe to call zfree() on it in the future. */
+    }
+
+    /* If we are here and a socket error happened, we don't want to retry.
+     * Just signal the problem to the client, but only do it if we don't
+     * already queued a different error reported by the destination server. */
+    if (!error_from_target && socket_error) {
+        may_retry = 0;
+        goto socket_err;
     }
 
     if (!error_from_target) {
-        /* Update the last_dbid in migrateCachedSocket and reply +OK. */
+        /* Success! Update the last_dbid in migrateCachedSocket, so that we can
+         * avoid SELECT the next time if the target DB is the same. Reply +OK. */
         cs->last_dbid = dbid;
         addReply(c,shared.ok);
     } else {
-        /* On error we already sent it in the for loop above. */
+        /* On error we already sent it in the for loop above, and set
+         * the curretly selected socket to -1 to force SELECT the next time. */
     }
 
     sdsfree(cmd.io.buffer.ptr);
-    zfree(ov); zfree(kv);
+    zfree(ov); zfree(kv); zfree(newargv);
+    if (socket_error) migrateCloseSocket(c->argv[1],c->argv[2]);
     return;
 
 /* On socket errors we try to close the cached socket and try again.
  * It is very common for the cached socket to get closed, if just reopening
  * it works it's a shame to notify the error to the caller. */
 socket_err:
+    /* Cleanup we want to perform in both the retry and no retry case.
+     * Note: Closing the migrate socket will also force SELECT next time. */
     sdsfree(cmd.io.buffer.ptr);
     migrateCloseSocket(c->argv[1],c->argv[2]);
-    if (errno != ETIMEDOUT && retry_num++ == 0) goto try_again;
+    zfree(newargv);
+    newargv = NULL; /* This will get reallocated on retry. */
+
+    /* Retry only if it's not a timeout and we never attempted a retry
+     * (or the code jumping here did not set may_retry to zero). */
+    if (errno != ETIMEDOUT && may_retry) {
+        may_retry = 0;
+        goto try_again;
+    }
+
+    /* Cleanup we want to do if no retry is attempted. */
     zfree(ov); zfree(kv);
     addReplySds(c,
         sdscatprintf(sdsempty(),
@@ -4866,7 +4913,7 @@ void readwriteCommand(redisClient *c) {
  * REDIS_CLUSTER_REDIR_CROSS_SLOT if the request contains multiple keys that
  * don't belong to the same hash slot.
  *
- * REDIS_CLUSTER_REDIR_UNSTABLE if the request contains mutliple keys
+ * REDIS_CLUSTER_REDIR_UNSTABLE if the request contains multiple keys
  * belonging to the same slot, but the slot is not stable (in migration or
  * importing state, likely because a resharding is in progress).
  *
@@ -4986,8 +5033,11 @@ clusterNode *getNodeByQuery(redisClient *c, struct redisCommand *cmd, robj **arg
     /* Return the hashslot by reference. */
     if (hashslot) *hashslot = slot;
 
-    /* This request is about a slot we are migrating into another instance?
-     * Then if we have all the keys. */
+    /* MIGRATE always works in the context of the local node if the slot
+     * is open (migrating or importing state). We need to be able to freely
+     * move keys among instances in this case. */
+    if ((migrating_slot || importing_slot) && cmd->proc == migrateCommand)
+        return myself;
 
     /* If we don't have all the keys and we are migrating the slot, send
      * an ASK redirection. */

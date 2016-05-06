@@ -1,3 +1,10 @@
+redis (2:3.2.0-1~dotdeb+8.1) stable; urgency=medium
+
+  * Imported Upstream version 3.2.0
+  * Sync with Debian
+
+ -- Guillaume Plessis <gui@dotdeb.org>  Fri, 06 May 2016 19:02:18 +0000
+
 redis (2:3.0.7-1~dotdeb+8.1) stable; urgency=medium
 
   * Imported Upstream version 3.0.7

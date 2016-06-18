@@ -1,3 +1,9 @@
+redis (2:3.2.1-1~dotdeb+8.1) stable; urgency=medium
+
+  * Imported Upstream version 3.2.1
+
+ -- Guillaume Plessis <gui@dotdeb.org>  Sat, 18 Jun 2016 00:33:32 +0000
+
 redis (2:3.2.0-1~dotdeb+8.1) stable; urgency=medium
 
   * Imported Upstream version 3.2.0

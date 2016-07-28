@@ -45,13 +45,30 @@
 #define RDB_LOAD_ENC    (1<<0)
 #define RDB_LOAD_PLAIN  (1<<1)
 
-#define rdbExitReportCorruptRDB(reason) rdbCheckThenExit(reason, __LINE__);
+#define rdbExitReportCorruptRDB(...) rdbCheckThenExit(__LINE__,__VA_ARGS__)
 
-void rdbCheckThenExit(char *reason, int where) {
-    serverLog(LL_WARNING, "Corrupt RDB detected at rdb.c:%d (%s). "
-        "Running 'redis-check-rdb %s'",
-        where, reason, server.rdb_filename);
-    redis_check_rdb(server.rdb_filename);
+extern int rdbCheckMode;
+void rdbCheckError(const char *fmt, ...);
+void rdbCheckSetError(const char *fmt, ...);
+
+void rdbCheckThenExit(int linenum, char *reason, ...) {
+    va_list ap;
+    char msg[1024];
+    int len;
+
+    len = snprintf(msg,sizeof(msg),
+        "Internal error in RDB reading function at rdb.c:%d -> ", linenum);
+    va_start(ap,reason);
+    vsnprintf(msg+len,sizeof(msg)-len,reason,ap);
+    va_end(ap);
+
+    if (!rdbCheckMode) {
+        serverLog(LL_WARNING, "%s", msg);
+        char *argv[2] = {"",server.rdb_filename};
+        redis_check_rdb_main(2,argv);
+    } else {
+        rdbCheckError("%s",msg);
+    }
     exit(1);
 }
 
@@ -142,10 +159,14 @@ uint32_t rdbLoadLen(rio *rdb, int *isencoded) {
         /* Read a 14 bit len. */
         if (rioRead(rdb,buf+1,1) == 0) return RDB_LENERR;
         return ((buf[0]&0x3F)<<8)|buf[1];
-    } else {
+    } else if (type == RDB_32BITLEN) {
         /* Read a 32 bit len. */
         if (rioRead(rdb,&len,4) == 0) return RDB_LENERR;
         return ntohl(len);
+    } else {
+        rdbExitReportCorruptRDB(
+            "Unknown length encoding %d in rdbLoadLen()",type);
+        return -1; /* Never reached. */
     }
 }
 
@@ -199,7 +220,7 @@ void *rdbLoadIntegerObject(rio *rdb, int enctype, int flags) {
         val = (int32_t)v;
     } else {
         val = 0; /* anti-warning */
-        rdbExitReportCorruptRDB("Unknown RDB integer encoding type");
+        rdbExitReportCorruptRDB("Unknown RDB integer encoding type %d",enctype);
     }
     if (plain) {
         char buf[LONG_STR_SIZE], *p;
@@ -298,7 +319,10 @@ void *rdbLoadLzfStringObject(rio *rdb, int flags) {
 
     /* Load the compressed representation and uncompress it to target. */
     if (rioRead(rdb,c,clen) == 0) goto err;
-    if (lzf_decompress(c,clen,val,len) == 0) goto err;
+    if (lzf_decompress(c,clen,val,len) == 0) {
+        if (rdbCheckMode) rdbCheckSetError("Invalid LZF compressed string");
+        goto err;
+    }
     zfree(c);
 
     if (plain)
@@ -406,7 +430,7 @@ void *rdbGenericLoadStringObject(rio *rdb, int flags) {
         case RDB_ENC_LZF:
             return rdbLoadLzfStringObject(rdb,flags);
         default:
-            rdbExitReportCorruptRDB("Unknown RDB encoding type");
+            rdbExitReportCorruptRDB("Unknown RDB string encoding type %d",len);
         }
     }
 
@@ -895,7 +919,7 @@ int rdbSaveBackground(char *filename) {
     pid_t childpid;
     long long start;
 
-    if (server.rdb_child_pid != -1) return C_ERR;
+    if (server.aof_child_pid != -1 || server.rdb_child_pid != -1) return C_ERR;
 
     server.dirty_before_bgsave = server.dirty;
     server.lastbgsave_try = time(NULL);
@@ -1192,11 +1216,11 @@ robj *rdbLoadObject(int rdbtype, rio *rdb) {
                     hashTypeConvert(o, OBJ_ENCODING_HT);
                 break;
             default:
-                rdbExitReportCorruptRDB("Unknown encoding");
+                rdbExitReportCorruptRDB("Unknown RDB encoding type %d",rdbtype);
                 break;
         }
     } else {
-        rdbExitReportCorruptRDB("Unknown object type");
+        rdbExitReportCorruptRDB("Unknown RDB encoding type %d",rdbtype);
     }
     return o;
 }
@@ -1562,7 +1586,7 @@ int rdbSaveToSlavesSockets(void) {
     long long start;
     int pipefds[2];
 
-    if (server.rdb_child_pid != -1) return C_ERR;
+    if (server.aof_child_pid != -1 || server.rdb_child_pid != -1) return C_ERR;
 
     /* Before to fork, create a pipe that will be used in order to
      * send back to the parent the IDs of the slaves that successfully
@@ -1717,11 +1741,33 @@ void saveCommand(client *c) {
     }
 }
 
+/* BGSAVE [SCHEDULE] */
 void bgsaveCommand(client *c) {
+    int schedule = 0;
+
+    /* The SCHEDULE option changes the behavior of BGSAVE when an AOF rewrite
+     * is in progress. Instead of returning an error a BGSAVE gets scheduled. */
+    if (c->argc > 1) {
+        if (c->argc == 2 && !strcasecmp(c->argv[1]->ptr,"schedule")) {
+            schedule = 1;
+        } else {
+            addReply(c,shared.syntaxerr);
+            return;
+        }
+    }
+
     if (server.rdb_child_pid != -1) {
         addReplyError(c,"Background save already in progress");
     } else if (server.aof_child_pid != -1) {
-        addReplyError(c,"Can't BGSAVE while AOF log rewriting is in progress");
+        if (schedule) {
+            server.rdb_bgsave_scheduled = 1;
+            addReplyStatus(c,"Background saving scheduled");
+        } else {
+            addReplyError(c,
+                "An AOF log rewriting in progress: can't BGSAVE right now. "
+                "Use BGSAVE SCHEDULE in order to schedule a BGSAVE whenver "
+                "possible.");
+        }
     } else if (rdbSaveBackground(server.rdb_filename) == C_OK) {
         addReplyStatus(c,"Background saving started");
     } else {

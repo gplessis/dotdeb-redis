@@ -161,7 +161,7 @@ static void cliRefreshPrompt(void) {
         len = anetFormatAddr(config.prompt, sizeof(config.prompt),
                            config.hostip, config.hostport);
     /* Add [dbnum] if needed */
-    if (config.dbnum != 0 && config.last_cmd_type != REDIS_REPLY_ERROR)
+    if (config.dbnum != 0)
         len += snprintf(config.prompt+len,sizeof(config.prompt)-len,"[%d]",
             config.dbnum);
     snprintf(config.prompt+len,sizeof(config.prompt)-len,"> ");
@@ -916,7 +916,7 @@ static int cliSendCommand(int argc, char **argv, int repeat) {
             return REDIS_ERR;
         } else {
             /* Store database number when SELECT was successfully executed. */
-            if (!strcasecmp(command,"select") && argc == 2) {
+            if (!strcasecmp(command,"select") && argc == 2 && config.last_cmd_type != REDIS_REPLY_ERROR) {
                 config.dbnum = atoi(argv[1]);
                 cliRefreshPrompt();
             } else if (!strcasecmp(command,"auth") && argc == 2) {

@@ -7,9 +7,9 @@ Build-Depends:
  dh-systemd (>= 1.5),
  procps,
  tcl
-Standards-Version: 3.9.6
+Standards-Version: 3.9.8
 Homepage: http://redis.io/
-Vcs-Git: git://github.com/lamby/pkg-redis.git
+Vcs-Git: https://github.com/lamby/pkg-redis.git
 Vcs-Browser: https://github.com/lamby/pkg-redis
 
 Package: redis-server

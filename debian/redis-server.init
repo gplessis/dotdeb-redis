@@ -32,6 +32,12 @@ fi
 
 set -e
 
+if [ "$(id -u)" != "0" ]
+then
+	log_failure_msg "Must be run as root."
+	exit 1
+fi
+
 Run_parts () {
 	if [ -d /etc/redis/${NAME}.${1}.d ]
 	then

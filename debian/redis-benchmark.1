@@ -13,8 +13,14 @@ supported.
 \-h hostname
 Server hostname (default 127.0.0.1)
 .TP
-\-p hostname
+\-p port
 Server port (default 6379)
+.TP
+\-s socket
+Server socket (overrides host and port)
+.TP
+\-a password
+Password for Redis Auth
 .TP 
 \-c clients
 Number of parallel connections (default 50)
@@ -24,6 +30,9 @@ Total number of requests (default 10000)
 .TP
 \-d size
 Data size of SET/GET value in bytes (default 2)
+.TP
+\-dbnum db
+SELECT the specified db number (default 0)
 .TP
 \-k boolean
 1=keep alive 0=reconnect (default 1)
@@ -35,8 +44,14 @@ constant keys, the <keyspacelen> argument determines the max number of values
 for the random number. For instance if set to 10 only rand000000000000 -
 rand000000000009 range will be allowed.
 .TP
+\-P numreq
+Pipeline <numreq> requests. Default 1 (no pipeline).
+.TP
 \-q
 Quiet. Just show query/sec values
+.TP
+\-\-csv
+Ourput in CSV format
 .TP
 \-l
 Loop. Run the tests forever

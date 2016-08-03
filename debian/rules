@@ -26,8 +26,9 @@ override_dh_auto_build:
 
 override_dh_auto_test:
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
-	./runtest || true
-	./runtest-sentinel || true
+	# Avoid race conditions in upstream testsuite. (#830500)
+	./runtest
+	./runtest-sentinel
 endif
 
 override_dh_compress:

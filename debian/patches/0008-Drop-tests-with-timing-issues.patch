@@ -1,0 +1,20 @@
+From: Chris Lamb <lamby@debian.org>
+Date: Thu, 28 Jul 2016 00:14:28 -0400
+Subject: Drop tests with timing issues.
+
+---
+ tests/test_helper.tcl | 1 -
+ 1 file changed, 1 deletion(-)
+
+Index: dotdeb-redis/tests/test_helper.tcl
+===================================================================
+--- dotdeb-redis.orig/tests/test_helper.tcl
++++ dotdeb-redis/tests/test_helper.tcl
+@@ -36,7 +36,6 @@ set ::all_tests {
+     integration/replication-2
+     integration/replication-3
+     integration/replication-4
+-    integration/replication-psync
+     integration/aof
+     integration/rdb
+     integration/convert-zipmap-hash-on-load

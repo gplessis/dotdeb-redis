@@ -1,0 +1,15 @@
+README.source for redis
+=======================
+
+We maintain our own versions of redis.conf and sentinel.conf under debian/
+instead of patching.
+
+Prior to releasing a new upstream verison, remember to run:
+
+ $ diff -urNad redis.conf debian/redis.conf
+ $ diff -urNad sentinel.conf debian/sentinel.conf
+
+.. and incorporate any changes.
+
+
+ -- Chris Lamb <lamby@debian.org>  Tue, 02 Aug 2016 13:10:10 -0400

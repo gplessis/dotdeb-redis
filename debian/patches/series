@@ -1,4 +1,6 @@
-01-fix-ftbfs-on-kfreebsd.diff
-02-fix-ftbfs-on-kfreebsd.diff
-04-dpkg-buildflags.diff
-05-reproducible-build.diff
+0001-fix-ftbfs-on-kfreebsd.patch
+0002-fix-ftbfs-on-kfreebsd.patch
+0004-dpkg-buildflags.patch
+0005-SOURCE_DATE_EPOCH.patch
+0006-Skip-logging-tests-as-not-all-architectures-support-.patch
+0008-Drop-tests-with-timing-issues.patch

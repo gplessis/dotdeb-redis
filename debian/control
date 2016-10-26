@@ -16,6 +16,7 @@ Package: redis-server
 Architecture: any
 Depends:
  adduser,
+ lsb-base (>= 3.2-14),
  redis-tools (= ${binary:Version}),
  ${misc:Depends},
  ${shlibs:Depends}

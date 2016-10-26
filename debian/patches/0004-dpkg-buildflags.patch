@@ -38,8 +38,8 @@ Index: dotdeb-redis/src/Makefile
 ===================================================================
 --- dotdeb-redis.orig/src/Makefile
 +++ dotdeb-redis/src/Makefile
-@@ -98,7 +98,7 @@ ifeq ($(MALLOC),jemalloc)
- 	FINAL_LIBS+= ../deps/jemalloc/lib/libjemalloc.a -ldl
+@@ -108,7 +108,7 @@ ifeq ($(MALLOC),jemalloc)
+ 	FINAL_LIBS+= ../deps/jemalloc/lib/libjemalloc.a
  endif
  
 -REDIS_CC=$(QUIET_CC)$(CC) $(FINAL_CFLAGS)

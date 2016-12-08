@@ -18,7 +18,12 @@ case "${1}" in
 		for DIR in /var/lib/redis /var/log/redis
 		do
 			mkdir -p ${DIR}
-			chown -R ${USER}:${GROUP} ${DIR}
+
+			if ! dpkg-statoverride --list ${DIR} >/dev/null 2>&1
+			then
+				chown -R ${USER}:${GROUP} ${DIR}
+				chmod 750 ${DIR}
+			fi
 		done
 
 		if ! dpkg-statoverride --list ${CONFFILE} >/dev/null 2>&1

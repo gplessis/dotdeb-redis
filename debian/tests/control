@@ -1,1 +1,1 @@
-Test-Command: redis-cli INFO
+Test-Command: redis-cli INFO && redis-benchmark -P 10

@@ -1,3 +1,11 @@
+redis (2:3.2.10-1~dotdeb+8.1) oldstable; urgency=medium
+
+  [ Guillaume Plessis ]
+  * Stick to the 3.2 branch
+  * Imported Upstream version 3.2.10
+
+ -- Guillaume Plessis <gui@dotdeb.org>  Fri, 28 Jul 2017 17:40:31 +0000
+
 redis (2:3.2.9-1~dotdeb+8.1) stable; urgency=medium
 
   [ Guillaume Plessis ]
